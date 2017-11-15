@@ -15,13 +15,14 @@
 #'   ntr_internalLabBlanks
 #' @param kclExt A data frame containing inorganic N concentrations measured in
 #'   kcl extractions and blanks. Data product table name is ntr_externalLab
-#' @param soilMoist A data frame containing soil moisture data. Data product
+#' @param soilMoist A data frame containing soil moisture values. Data product
 #'   table name is sls_soilMoisture
-#' @param toFilter An optional list of the condition values to filter on
-#' @param dropFlagged Parameter to filter out concentration measurements for
+#' @param toFilter An optional list of condition values for which to filter out
+#' concentration measurements
+#' @param dropFlagged An option to filter out concentration measurements for
 #'   samples with quality flags, defaults to F
-#' @param keepAll Parameter that specifies whether to keep all variables used in
-#'   the calculations or only relevant one, defaults to F
+#' @param keepAll An option to keep all variables used in nitrogen calculations,
+#' defaults to F
 #' @return A dataframe of soil inorganic N concentrations in micrograms per gram
 #'   in t-initial and t-final soil cores, as well as net N transformation rates
 #'   for t-final cores
@@ -90,14 +91,45 @@ def.calc.ntrans <- function(kclInt,
       combinedDF
     }
 
-  # set N data to NA based on ammonium or nitrate quality flags (optional)
+  # set concentration data to NA based on ammonium or nitrate quality flags (optional)
     if(dropFlagged) {
       combinedDF$kclAmmoniumNConc[combinedDF$ammoniumNQF %in% c("1", "2")] <- NA
       combinedDF$kclNitrateNitriteNConc[combinedDF$nitrateNitriteNQF %in% c("1", "2")] <- NA
+
+      # compile list of how many ammonium values got set to NA with filtering
+      if (any(combinedDF$ammoniumNQF %in% c("1", "2"))) {
+        num2 <-
+          length(combinedDF$kclAmmoniumNConc[combinedDF$ammoniumNQF %in% c("1", "2")])
+        warning2 <-
+          paste(
+            'warning:',
+            num2,
+            'records had ammonium concentrations set to NA due to the QF value',
+            sep = " "
+          )
+        print(warning2)
+      } else {
+        print()
+      }
+
+      # compile list of how many nitrate + nitrite values got set to NA with filtering
+      if (any(combinedDF$nitrateNitriteNQF %in% c("1", "2"))) {
+        num3 <-
+          length(combinedDF$kclNitrateNitriteNConc[combinedDF$nitrateNitriteNQF %in% c("1", "2")])
+        warning3 <-
+          paste(
+            'warning:',
+            num3,
+            'records had nitrate + nitrite concentrations set to NA due to the QF value',
+            sep = " "
+          )
+        print(warning3)
+      } else {
+        print()
+      }
       } else {
       combinedDF
       }
-
 
   # add blank info & values
   combinedDF$blank1ID <-
@@ -146,6 +178,23 @@ def.calc.ntrans <- function(kclInt,
     soilMoist$soilMoisture[match(combinedDF$sampleID, soilMoist$sampleID)]
   combinedDF$dryMassFraction <-
     soilMoist$dryMassFraction[match(combinedDF$sampleID, soilMoist$sampleID)]
+
+  # count how many samples are missing moisture values
+  samples <- combinedDF[!grepl("BRef", combinedDF$kclSampleID),]
+  if (any(is.na(samples$soilMoisture))) {
+    num4 <-
+      sum(is.na(samples$soilMoisture))
+    warning4 <-
+      paste(
+        'warning:',
+        num4,
+        'records were missing soil moisture values',
+        sep = " "
+      )
+    print(warning4)
+  } else {
+    print()
+  }
   combinedDF
 
   # convert concentrations to micrograms per gram soil
