@@ -6,7 +6,8 @@
 
 #' @description
 #' Calculate soil extractable inorganic nitrogen concentrations and net
-#' transformation rates for NEON L1 data
+#' transformation rates for NEON L1 data. We recommend using the neonDataStackR
+#' function to stack monthly files prior to using this function.
 
 #' @param kclInt A data frame containing soil masses and kcl volumes used in kcl
 #'   extractions. Data product table name is ntr_internalLab
