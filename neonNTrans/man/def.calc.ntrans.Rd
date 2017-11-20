@@ -37,7 +37,8 @@ A dataframe of soil inorganic N concentrations in micrograms per gram
 }
 \description{
 Calculate soil extractable inorganic nitrogen concentrations and net
-transformation rates for NEON L1 data
+transformation rates for NEON L1 data. We recommend using the neonDataStackR
+function to stack monthly files prior to using this function.
 }
 \examples{
 \dontrun{
