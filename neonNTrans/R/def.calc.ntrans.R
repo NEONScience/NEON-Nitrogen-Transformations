@@ -1,13 +1,11 @@
 ################################################################################
-#' @title NEON Soil Inorganic N Concentration and Net N Transformation Rates
+#' @title NEON Soil Inorganic N Concentrations and Net N Transformation Rates
 
-#' @author
-#' Samantha Weintraub \email{sweintraub@battelleecology.org}
+#' @author Samantha Weintraub \email{sweintraub@battelleecology.org}
 
-#' @description
-#' Calculate soil extractable inorganic nitrogen concentrations and net
-#' transformation rates for NEON L1 data. We recommend using the neonDataStackR
-#' function to stack monthly files prior to using this function.
+#' @description Calculate soil extractable inorganic nitrogen concentrations and
+#' net transformation rates for NEON L1 data. Consider using the
+#' neonDataStackR function to stack monthly files prior to use of this function.
 
 #' @param kclInt A data frame containing soil masses and kcl volumes used in kcl
 #'   extractions. Data product table name is ntr_internalLab
@@ -19,11 +17,11 @@
 #' @param soilMoist A data frame containing soil moisture values. Data product
 #'   table name is sls_soilMoisture
 #' @param toFilter An optional list of condition values for which to filter out
-#' concentration measurements
+#'   concentration measurements
 #' @param dropFlagged An option to filter out concentration measurements for
 #'   samples with quality flags, defaults to F
 #' @param keepAll An option to keep all variables used in nitrogen calculations,
-#' defaults to F
+#'   defaults to F
 #' @return A dataframe of soil inorganic N concentrations in micrograms per gram
 #'   in t-initial and t-final soil cores, as well as net N transformation rates
 #'   for t-final cores
@@ -31,7 +29,7 @@
 #' @references
 #' License: GNU AFFERO GENERAL PUBLIC LICENSE Version 3, 19 November 2007
 
-#' @keywords soil, nitrogen mineralization, nitrification
+#' @keywords soil, nitrogen, mineralization, nitrification
 
 #' @examples
 #' \dontrun{
@@ -41,7 +39,7 @@
 #' df4 <- "path/to/data/sls_soilMoisture"
 #'
 #' out <- soilKCl(kclInt = df1, kclIntBlank = df2, kclExt =df3, soilMoist = df4,
-#' filter = T, toFilter = c("thawed & warm"), dropFlagged = T)
+#' toFilter = c("thawed & warm"), dropFlagged = T)
 #' }
 
 #' @seealso Currently none
@@ -169,10 +167,9 @@ def.calc.ntrans <- function(kclInt,
     combinedDF$kclNitrateNitriteNConc - combinedDF$blankNO3mean
   combinedDF$kclNitrateNitriteNBlankCor <-
     dplyr::if_else(
-      combinedDF$kclNitrateNitriteNBlankCor < 0,
-      0,
-      combinedDF$kclNitrateNitriteNBlankCor
-    ) # set to zero if negative
+           combinedDF$kclNitrateNitriteNBlankCor < 0,
+           0,
+           combinedDF$kclNitrateNitriteNBlankCor) # set to zero if negative
 
   # add soil moisture and dry mass fraction
   combinedDF$soilMoisture <-
@@ -240,7 +237,10 @@ def.calc.ntrans <- function(kclInt,
     ifelse(combinedDF$nTransBoutType == "tInitial",
            NA,
            cast1$netNitugPerGramPerDay[match(combinedDF$incubationPairID, cast1$incubationPairID)])
-
+  
+  # set NaN to NA
+  combinedDF[is.na(combinedDF)] <- NA
+  
   # determine whether to keep all variable or just a subset
   if (keepAll) {
     combinedDF
@@ -268,20 +268,9 @@ def.calc.ntrans <- function(kclInt,
           "netNitugPerGramPerDay"
         )
       )
-    combinedDF <- combinedDF[!is.na(combinedDF$plotID), ]
-    combinedDF[is.na(combinedDF)] <- NA
-    combinedDF %>% dplyr::mutate_at(
-      vars(
-        dryMassFraction,
-        soilDryMass,
-        kclAmmoniumNBlankCor,
-        kclNitrateNitriteNBlankCor,
-        soilAmmoniumNugPerGram,
-        soilNitrateNitriteNugPerGram,
-        netNminugPerGramPerDay,
-        netNitugPerGramPerDay
-      ),
-      funs(round(., 3))
-    )
+    combinedDF <- combinedDF[!is.na(combinedDF$plotID), ]# Drop records that have no plotID (blanks)
   }
+  
+  # Round all numeric variables to 3 digits
+  combinedDF %>% mutate_if(is.numeric, round, digits=3)
 }
