@@ -2,7 +2,7 @@
 % Please edit documentation in R/def.calc.ntrans.R
 \name{def.calc.ntrans}
 \alias{def.calc.ntrans}
-\title{NEON Soil Inorganic N Concentration and Net N Transformation Rates}
+\title{NEON Soil Inorganic N Concentrations and Net N Transformation Rates}
 \usage{
 def.calc.ntrans(kclInt, kclIntBlank, kclExt, soilMoist, toFilter,
   dropFlagged = FALSE, keepAll = FALSE)
@@ -36,9 +36,9 @@ A dataframe of soil inorganic N concentrations in micrograms per gram
   for t-final cores
 }
 \description{
-Calculate soil extractable inorganic nitrogen concentrations and net
-transformation rates for NEON L1 data. We recommend using the neonDataStackR
-function to stack monthly files prior to using this function.
+Calculate soil extractable inorganic nitrogen concentrations and
+net transformation rates for NEON L1 data. Consider using the
+neonDataStackR function to stack monthly files prior to use of this function.
 }
 \examples{
 \dontrun{
@@ -48,7 +48,7 @@ df3 <- "path/to/data/ntr_ntr_externalLab"
 df4 <- "path/to/data/sls_soilMoisture"
 
 out <- soilKCl(kclInt = df1, kclIntBlank = df2, kclExt =df3, soilMoist = df4,
-filter = T, toFilter = c("thawed & warm"), dropFlagged = T)
+toFilter = c("thawed & warm"), dropFlagged = T)
 }
 }
 \references{
@@ -62,5 +62,5 @@ Samantha Weintraub \email{sweintraub@battelleecology.org}
 }
 \keyword{mineralization,}
 \keyword{nitrification}
-\keyword{nitrogen}
+\keyword{nitrogen,}
 \keyword{soil,}
