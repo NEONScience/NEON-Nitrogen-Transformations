@@ -19,7 +19,7 @@ This repository is for code that can be used to calculate soil extractable inorg
 
 <!-- ****** Usage ****** -->
 ## Usage
-This repository is designed to be used with the NEON	Soil inorganic nitrogen pools and transformations data product (NEON.DP1.10080).
+This repository is designed to be used with the NEON Soil inorganic nitrogen pools and transformations data product (NEON.DP1.10080).
 
 
 <!-- ****** Acknowledgements ****** -->

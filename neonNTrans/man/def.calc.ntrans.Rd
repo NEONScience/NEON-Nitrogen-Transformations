@@ -4,7 +4,7 @@
 \alias{def.calc.ntrans}
 \title{NEON Soil Inorganic N Concentrations and Net N Transformation Rates}
 \usage{
-def.calc.ntrans(kclInt, kclIntBlank, kclExt, soilMoist, toFilter,
+def.calc.ntrans(kclInt, kclIntBlank, kclExt, soilMoist, dropConditions,
   dropFlagged = FALSE, keepAll = FALSE)
 }
 \arguments{
@@ -21,19 +21,20 @@ kcl extractions and blanks. Data product table name is ntr_externalLab}
 \item{soilMoist}{A data frame containing soil moisture values. Data product
 table name is sls_soilMoisture}
 
-\item{toFilter}{An optional list of condition values for which to filter out
+\item{dropConditions}{An optional list of condition values for which to exclude
 concentration measurements}
 
-\item{dropFlagged}{An option to filter out concentration measurements for
+\item{dropFlagged}{An option to exclude concentration measurements for
 samples with quality flags, defaults to F}
 
-\item{keepAll}{An option to keep all variables used in nitrogen calculations,
-defaults to F}
+\item{keepAll}{An option to keep all variables and blank info used in calculations. 
+Defaults to F, meaning only sample information (not blanks), critical input variables, 
+and calculated outputs will be included in the output data frame.}
 }
 \value{
-A dataframe of soil inorganic N concentrations in micrograms per gram
+A data frame of soil inorganic N concentrations in micrograms per gram
   in t-initial and t-final soil cores, as well as net N transformation rates
-  for t-final cores
+  for t-final cores. Rows for blank samples are not included when keepAll = F.
 }
 \description{
 Calculate soil extractable inorganic nitrogen concentrations and
@@ -47,8 +48,8 @@ df2 <- "path/to/data/ntr_internalLabBlanks"
 df3 <- "path/to/data/ntr_ntr_externalLab"
 df4 <- "path/to/data/sls_soilMoisture"
 
-out <- soilKCl(kclInt = df1, kclIntBlank = df2, kclExt =df3, soilMoist = df4,
-toFilter = c("thawed & warm"), dropFlagged = T)
+out <- def.calc.ntrans(kclInt = df1, kclIntBlank = df2, kclExt =df3, soilMoist = df4,
+dropConditions = c("thawed & warm"), dropFlagged = T)
 }
 }
 \references{

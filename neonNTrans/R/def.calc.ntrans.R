@@ -16,15 +16,16 @@
 #'   kcl extractions and blanks. Data product table name is ntr_externalLab
 #' @param soilMoist A data frame containing soil moisture values. Data product
 #'   table name is sls_soilMoisture
-#' @param toFilter An optional list of condition values for which to filter out
+#' @param dropConditions An optional list of condition values for which to exclude
 #'   concentration measurements
-#' @param dropFlagged An option to filter out concentration measurements for
+#' @param dropFlagged An option to exclude concentration measurements for
 #'   samples with quality flags, defaults to F
-#' @param keepAll An option to keep all variables used in nitrogen calculations,
-#'   defaults to F
-#' @return A dataframe of soil inorganic N concentrations in micrograms per gram
+#' @param keepAll An option to keep all variables and blank info used in calculations. 
+#'   Defaults to F, meaning only sample information (not blanks), critical input variables, 
+#'   and calculated outputs will be included in the output data frame. 
+#' @return A data frame of soil inorganic N concentrations in micrograms per gram
 #'   in t-initial and t-final soil cores, as well as net N transformation rates
-#'   for t-final cores
+#'   for t-final cores. Rows for blank samples are not included when keepAll = F.
 
 #' @references
 #' License: GNU AFFERO GENERAL PUBLIC LICENSE Version 3, 19 November 2007
@@ -38,8 +39,8 @@
 #' df3 <- "path/to/data/ntr_ntr_externalLab"
 #' df4 <- "path/to/data/sls_soilMoisture"
 #'
-#' out <- soilKCl(kclInt = df1, kclIntBlank = df2, kclExt =df3, soilMoist = df4,
-#' toFilter = c("thawed & warm"), dropFlagged = T)
+#' out <- def.calc.ntrans(kclInt = df1, kclIntBlank = df2, kclExt =df3, soilMoist = df4,
+#' dropConditions = c("thawed & warm"), dropFlagged = T)
 #' }
 
 #' @seealso Currently none
@@ -56,7 +57,7 @@ def.calc.ntrans <- function(kclInt,
                     kclIntBlank,
                     kclExt,
                     soilMoist,
-                    toFilter,
+                    dropConditions,
                     dropFlagged = FALSE,
                     keepAll = FALSE
                     ){
@@ -65,16 +66,16 @@ def.calc.ntrans <- function(kclInt,
   combinedDF <- dplyr::left_join(kclExt, kclInt, by = "kclSampleID")
 
   # set N data to NA based on sample or received condition values (optional)
-    if(!missing(toFilter)) {
-      combinedDF$kclAmmoniumNConc[combinedDF$sampleCondition %in% toFilter] <- NA
-      combinedDF$kclNitrateNitriteNConc[combinedDF$sampleCondition %in% toFilter] <- NA
-      combinedDF$kclAmmoniumNConc[combinedDF$receivedCondition %in% toFilter] <- NA
-      combinedDF$kclNitrateNitriteNConc[combinedDF$receivedCondition %in% toFilter] <- NA
+    if(!missing(dropConditions)) {
+      combinedDF$kclAmmoniumNConc[combinedDF$sampleCondition %in% dropConditions] <- NA
+      combinedDF$kclNitrateNitriteNConc[combinedDF$sampleCondition %in% dropConditions] <- NA
+      combinedDF$kclAmmoniumNConc[combinedDF$receivedCondition %in% dropConditions] <- NA
+      combinedDF$kclNitrateNitriteNConc[combinedDF$receivedCondition %in% dropConditions] <- NA
 
       # compile list of how many values got set to NA with filtering
-      if (any(combinedDF$sampleCondition %in% toFilter)) {
+      if (any(combinedDF$sampleCondition %in% dropConditions)) {
         num1 <-
-          length(combinedDF$sampleID[combinedDF$sampleCondition %in% toFilter])
+          length(combinedDF$sampleID[combinedDF$sampleCondition %in% dropConditions])
         warning1 <-
           paste(
             'warning:',

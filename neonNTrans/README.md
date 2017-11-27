@@ -13,20 +13,24 @@ The single function contained in this package, def.calc.ntrans, has the followin
 
 1.  download data from the NEON data portal.
 2.  *optional* use the neonDataStackR package in the NEON-utilities repository (<https://github.com/NEONScience/NEON-utilities>) to stack monthly files by table
-3.  load files for each input table required by the function
-4.  out &lt;- def.calc.ntrans(kclInt = df1, kclIntBlank = df2, kclExt = df3, soilMoist = df4) returns a data frame with inorganic N concentrations in ug N per g dry soil. Additionally, it contains net N transformation rates in ug N per g per day for incubated samples if data from both initial and final cores are available.
+3.  load the function:
+    library(devtools)
+    install\_github("NEONScience/NEON-Nitrogen-Transformations/def.calc.ntrans", dependencies=TRUE)
+    library (def.calc.ntrans)
+4.  load files for each input table required by the function
+5.  **out &lt;- def.calc.ntrans(kclInt = df1, kclIntBlank = df2, kclExt = df3, soilMoist = df4)** returns a data frame with inorganic N concentrations in ug N per g dry soil and net N transformation rates in ug N per g per day for incubated samples if data from both initial and final cores are available. Defaults to keepAll = F, meaning the output is a simplified dataframe containing only sample information, critical input variables, and calculated outputs.
 
 <!-- ****** Calculation Summary ****** -->
 Calculation Summary
 -------------------
 
-The first step in converting inorganic N concentrations in KCl extracts to soil extractable inorganic N is to blank-correct the concentration values (mg/L) for each sample. This is necessary because blanks can contain substantial ammounts of ammonium and nitrate, and this contaminant N must be accounted for. The def.calc.ntrans function thus estimates mean N concentration in the set of blanks associated with each batch of samples (typically, n = 3), then subtracts the mean blank value from measured ammonium and nitrate+nitrite concentrations.
+The first step in converting inorganic N concentrations in KCl extracts to soil extractable inorganic N is to blank-correct the concentration values (mg/L) for each sample. This is necessary because blanks can contain substantial ammounts of ammonium and nitrate, and this contaminant N must be accounted for. The def.calc.ntrans function thus estimates mean N concentration in the set of blanks associated with each batch of samples (typically, n = 3), then subtracts the mean blank value from measured ammonium and nitrate+nitrite N concentrations.
 
 Next, blank-corrected concentrations are converted from milligrams N per liter to micrograms N per gram by dividing by the mass of dry soil extracted and multiplying by extraction volume. To calculate the mass of dry soil extracted, the def.calc.ntrans function uses the soil dry mass fraction provided for each sample in the soil moisture table.
 
 Lastly, if data is available for both an initial and final core in the pair, net N mineralization is calculated as the difference in final minus initial inorganic N (ammonium plus nitrate+nitrite N), divided by the incubation length. Net nitrification is calucated as the difference between final and intital nitrate+nitrite N, divided by the incubation length.
 
-The def.calc.ntrans function provides a summary of how many records are missing soil concentration estimates due to lack of dry mass fraction data in the soil moisture table. Moreover, when user decide to filter out data based on specific condition values for external laboratory flags, the function also provides a summrary of how many records are affected.
+The def.calc.ntrans function provides a summary of how many records are missing soil concentration estimates due to lack of dry mass fraction data in the soil moisture table. Moreover, when users decide to drop data based on specific condition values or external laboratory flags (see function help file for details), the function also provides a summary of the number of records affected.
 
 <!-- ****** Acknowledgements ****** -->
 Credits & Acknowledgements
