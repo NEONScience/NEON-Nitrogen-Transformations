@@ -11,8 +11,8 @@ Usage
 
 The single function contained in this package, def.calc.ntrans, has the following purpose: (1) join variables across tables and data products (2) calculate blank-corrected inorganic N concentrations in KCl extracts (3) convert from N concentrations in extracts (mg N/L) to soil extractable N concentrations (ug N/g), and (4) calculate net mineralization and nitrification rates using intital and incubated core pairs. See the function help file for additional details. The general flow of using this package is:
 
-1.  download data from the NEON data portal.
-2.  *optional* use the neonDataStackR package in the NEON-utilities repository (<https://github.com/NEONScience/NEON-utilities>) to stack monthly files by table
+1.  download data from the NEON data portal - Soil inorganic nitrogen pools and transformations, NEON.DP1.10080 and Soil physical properties (Distributed periodic), NEON.DP1.10086 are both needed.
+2.  *optional* use functions for downloading and/or stacking monthly data files from the neonUtilities package (zipsByProduct and stackByTable) in the NEON-utilities repository (<https://github.com/NEONScience/NEON-utilities>). See package README for helpful example code.
 3.  load the function:
 
          library(devtools)  
