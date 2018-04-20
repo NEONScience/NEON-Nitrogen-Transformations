@@ -4,8 +4,8 @@
 #' @author Samantha Weintraub \email{sweintraub@battelleecology.org}
 
 #' @description Calculate soil extractable inorganic nitrogen concentrations and
-#' net transformation rates for NEON L1 data. Consider using the
-#' neonDataStackR function to stack monthly files prior to use of this function.
+#' net N transformation rates for NEON L1 data. Can use the
+#' neonUtilities package (zipsByProduct and stackByTable) to download and stack monthly files prior to running this function.
 
 #' @param kclInt A data frame containing soil masses and kcl volumes used in kcl
 #'   extractions. Data product table name is ntr_internalLab
@@ -16,15 +16,15 @@
 #'   kcl extractions and blanks. Data product table name is ntr_externalLab
 #' @param soilMoist A data frame containing soil moisture values. Data product
 #'   table name is sls_soilMoisture
-#' @param dropConditions An optional list of condition values for which to exclude
-#'   concentration measurements
-#' @param dropFlagged An option to exclude concentration measurements for
-#'   samples with quality flags, defaults to F
+#' @param dropConditions An optional list of sampleCondition or dataQF values for which to exclude
+#'   ammonium and nitrate concentration measurements
+#' @param dropFlagged An option to exclude ammonium and nitrate concentration measurements for
+#'   samples with external lab quality flags, defaults to F
 #' @param keepAll An option to keep all variables and blank info used in calculations. 
 #'   Defaults to F, meaning only sample information (not blanks), critical input variables, 
 #'   and calculated outputs will be included in the output data frame. 
 #' @return A data frame of soil inorganic N concentrations in micrograms per gram
-#'   in t-initial and t-final soil cores, as well as net N transformation rates
+#'   in t-initial and t-final soil samples, as well as net N transformation rates
 #'   for t-final cores. Rows for blank samples are not included when keepAll = F.
 
 #' @references
@@ -40,7 +40,7 @@
 #' df4 <- "path/to/data/sls_soilMoisture"
 #'
 #' out <- def.calc.ntrans(kclInt = df1, kclIntBlank = df2, kclExt =df3, soilMoist = df4,
-#' dropConditions = c("thawed & warm"), dropFlagged = T)
+#' dropConditions = c("deprecatedMethod", "other"), dropFlagged = T)
 #' }
 
 #' @seealso Currently none
@@ -50,6 +50,8 @@
 # changelog and author contributions / copyrights
 #   Samantha Weintraub (2017-11-22)
 #     original creation
+#   Samantha Weintraub (2018-04-20)
+#     minor updates to allow for multiple dropConditions
 ################################################################################
 
 # Function
@@ -65,32 +67,78 @@ def.calc.ntrans <- function(kclInt,
   # join the internal and external lab data
   combinedDF <- dplyr::left_join(kclExt, kclInt, by = "kclSampleID")
 
-  # set N data to NA based on sample or received condition values (optional)
+  # set N data to NA based on sample condition or dataQF values (optional)
     if(!missing(dropConditions)) {
-      combinedDF$kclAmmoniumNConc[combinedDF$sampleCondition %in% dropConditions] <- NA
-      combinedDF$kclNitrateNitriteNConc[combinedDF$sampleCondition %in% dropConditions] <- NA
-      combinedDF$kclAmmoniumNConc[combinedDF$receivedCondition %in% dropConditions] <- NA
-      combinedDF$kclNitrateNitriteNConc[combinedDF$receivedCondition %in% dropConditions] <- NA
+      # conditions and NEON quality flags in external lab data
+      combinedDF$kclAmmoniumNConc[combinedDF$sampleCondition.x %in% dropConditions] <- NA
+      combinedDF$kclNitrateNitriteNConc[combinedDF$sampleCondition.x %in% dropConditions] <- NA
+      combinedDF$kclAmmoniumNConc[grepl(paste(dropConditions, collapse = "|"), combinedDF$dataQF.x)] <- NA
+      combinedDF$kclNitrateNitriteNConc[grepl(paste(dropConditions, collapse = "|"), combinedDF$dataQF.x)] <- NA
+      # conditions and NEON quality flags in internal lab data
+      combinedDF$kclAmmoniumNConc[combinedDF$sampleCondition.y %in% dropConditions] <- NA
+      combinedDF$kclNitrateNitriteNConc[combinedDF$sampleCondition.y %in% dropConditions] <- NA
+      combinedDF$kclAmmoniumNConc[grepl(paste(dropConditions, collapse = "|"), combinedDF$dataQF.y)] <- NA
+      combinedDF$kclNitrateNitriteNConc[grepl(paste(dropConditions, collapse = "|"), combinedDF$dataQF.y)] <- NA
 
-      # compile list of how many values got set to NA with filtering
-      if (any(combinedDF$sampleCondition %in% dropConditions)) {
+      # how many values got set to NA with extneral lab condition filtering
+      if (any(combinedDF$sampleCondition.x %in% dropConditions)) {
         num1 <-
-          length(combinedDF$sampleID[combinedDF$sampleCondition %in% dropConditions])
+          length(combinedDF$sampleID.x[combinedDF$sampleCondition.x %in% dropConditions])
         warning1 <-
           paste(
             'warning:',
             num1,
-            'records had concentration values set to NA due to anomolous conditions',
+            'records had concentration values set to NA due to anomolous external lab sample conditions',
             sep = " "
           )
         print(warning1)
+      } 
+      
+      # how many values got set to NA with internal lab condition filtering
+      if (any(combinedDF$sampleCondition.y %in% dropConditions)) {
+        num1a <-
+          length(combinedDF$sampleID.x[combinedDF$sampleCondition.y %in% dropConditions])
+        warning1a <-
+          paste(
+            'warning:',
+            num1a,
+            'records had concentration values set to NA due to anomolous NEON lab sample conditions',
+            sep = " "
+          )
+        print(warning1a)
+      } 
+      
+      # how many values got set to NA with external lab dataQF filtering
+      if (any(grepl(paste(dropConditions, collapse = "|"), combinedDF$dataQF.x))) {
+        num2 <-
+          length(combinedDF$sampleID.x[grepl(paste(dropConditions, collapse = "|"), combinedDF$dataQF.x)])
+        warning2 <-
+          paste(
+            'warning:',
+            num2,
+            'records (including blanks) had concentration values set to NA due to data quality issues',
+            sep = " "
+          )
+        print(warning2)
+      } 
+      
+      # how many values got set to NA with internal lab dataQF filtering
+      if (any(grepl(paste(dropConditions, collapse = "|"), combinedDF$dataQF.y))) {
+        num2a <-
+          length(combinedDF$sampleID.x[grepl(paste(dropConditions, collapse = "|"), combinedDF$dataQF.y)])
+        warning2a <-
+          paste(
+            'warning:',
+            num2a,
+            'records had concentration values set to NA due to data quality issues',
+            sep = " "
+          )
+        print(warning2a)
+      } 
       } else {
-        print()
-      }
-    } else {
       combinedDF
-    }
-
+      }
+    
   # set concentration data to NA based on ammonium or nitrate quality flags (optional)
     if(dropFlagged) {
       combinedDF$kclAmmoniumNConc[combinedDF$ammoniumNQF %in% c("1", "2")] <- NA
@@ -98,54 +146,50 @@ def.calc.ntrans <- function(kclInt,
 
       # compile list of how many ammonium values got set to NA with filtering
       if (any(combinedDF$ammoniumNQF %in% c("1", "2"))) {
-        num2 <-
-          length(combinedDF$kclAmmoniumNConc[combinedDF$ammoniumNQF %in% c("1", "2")])
-        warning2 <-
-          paste(
-            'warning:',
-            num2,
-            'records had ammonium concentrations set to NA due to the QF value',
-            sep = " "
-          )
-        print(warning2)
-      } else {
-        print()
-      }
-
-      # compile list of how many nitrate + nitrite values got set to NA with filtering
-      if (any(combinedDF$nitrateNitriteNQF %in% c("1", "2"))) {
         num3 <-
-          length(combinedDF$kclNitrateNitriteNConc[combinedDF$nitrateNitriteNQF %in% c("1", "2")])
+          length(combinedDF$kclAmmoniumNConc[combinedDF$ammoniumNQF %in% c("1", "2")])
         warning3 <-
           paste(
             'warning:',
             num3,
-            'records had nitrate + nitrite concentrations set to NA due to the QF value',
+            'records had ammonium concentrations set to NA due to the QF value',
             sep = " "
           )
         print(warning3)
-      } else {
-        print()
-      }
+      } 
+
+      # compile list of how many nitrate + nitrite values got set to NA with filtering
+      if (any(combinedDF$nitrateNitriteNQF %in% c("1", "2"))) {
+        num4 <-
+          length(combinedDF$kclNitrateNitriteNConc[combinedDF$nitrateNitriteNQF %in% c("1", "2")])
+        warning4 <-
+          paste(
+            'warning:',
+            num4,
+            'records had nitrate + nitrite concentrations set to NA due to the QF value',
+            sep = " "
+          )
+        print(warning4)
+      } 
       } else {
       combinedDF
       }
 
   # add blank info & values
   combinedDF$blank1ID <-
-    kclIntBlank$kclBlank1ID[match(combinedDF$kclReferenceID, kclIntBlank$kclReferenceID)]
+    kclIntBlank$kclBlank1ID[match(toupper(combinedDF$kclReferenceID), toupper(kclIntBlank$kclReferenceID))]
   combinedDF$blank1NH4 <-
     kclExt$kclAmmoniumNConc[match(toupper(combinedDF$blank1ID), toupper(kclExt$kclSampleID))]
   combinedDF$blank1NO3 <-
     kclExt$kclNitrateNitriteNConc[match(toupper(combinedDF$blank1ID), toupper(kclExt$kclSampleID))]
   combinedDF$blank2ID <-
-    kclIntBlank$kclBlank2ID[match(combinedDF$kclReferenceID, kclIntBlank$kclReferenceID)]
+    kclIntBlank$kclBlank2ID[match(toupper(combinedDF$kclReferenceID), toupper(kclIntBlank$kclReferenceID))]
   combinedDF$blank2NH4 <-
     kclExt$kclAmmoniumNConc[match(toupper(combinedDF$blank2ID), toupper(kclExt$kclSampleID))]
   combinedDF$blank2NO3 <-
     kclExt$kclNitrateNitriteNConc[match(toupper(combinedDF$blank2ID), toupper(kclExt$kclSampleID))]
   combinedDF$blank3ID <-
-    kclIntBlank$kclBlank3ID[match(combinedDF$kclReferenceID, kclIntBlank$kclReferenceID)]
+    kclIntBlank$kclBlank3ID[match(toupper(combinedDF$kclReferenceID), toupper(kclIntBlank$kclReferenceID))]
   combinedDF$blank3NH4 <-
     kclExt$kclAmmoniumNConc[match(toupper(combinedDF$blank3ID), toupper(kclExt$kclSampleID))]
   combinedDF$blank3NO3 <-
@@ -174,25 +218,25 @@ def.calc.ntrans <- function(kclInt,
 
   # add soil moisture and dry mass fraction
   combinedDF$soilMoisture <-
-    soilMoist$soilMoisture[match(combinedDF$sampleID, soilMoist$sampleID)]
+    soilMoist$soilMoisture[match(combinedDF$sampleID.x, soilMoist$sampleID)]
   combinedDF$dryMassFraction <-
-    soilMoist$dryMassFraction[match(combinedDF$sampleID, soilMoist$sampleID)]
+    soilMoist$dryMassFraction[match(combinedDF$sampleID.x, soilMoist$sampleID)]
 
   # count how many samples are missing moisture values
-  samples <- combinedDF[!grepl("BRef", combinedDF$kclSampleID),]
+  samples <- combinedDF[!grepl("BREF", combinedDF$kclSampleID),]
   if (any(is.na(samples$soilMoisture))) {
-    num4 <-
+    num5 <-
       sum(is.na(samples$soilMoisture))
-    warning4 <-
+    warning5 <-
       paste(
         'warning:',
-        num4,
+        num5,
         'records were missing soil moisture values',
         sep = " "
       )
-    print(warning4)
+    print(warning5)
   } else {
-    print()
+    next()
   }
   combinedDF
 
@@ -246,12 +290,14 @@ def.calc.ntrans <- function(kclInt,
   if (keepAll) {
     combinedDF
   } else {
+    combinedDF <- data.table::setnames(combinedDF, 
+                                        old = c("plotID.x", "collectDate.x", "sampleID.x"), 
+                                        new = c("plotID", "collectDate", "sampleID"))
     combinedDF <-
       subset(
         combinedDF,
         select = c(
           "plotID",
-          "setDate",
           "collectDate",
           "nTransBoutType",
           "sampleID",
@@ -269,7 +315,8 @@ def.calc.ntrans <- function(kclInt,
           "netNitugPerGramPerDay"
         )
       )
-    combinedDF <- combinedDF[!is.na(combinedDF$plotID), ]# Drop records that have no plotID (blanks)
+    combinedDF <- combinedDF[!is.na(combinedDF$nTransBoutType), ]# Drop records that have no plotID (blanks)
+    combinedDF <- combinedDF[order(combinedDF$incubationPairID),]
   }
   
   # Round all numeric variables to 3 digits
