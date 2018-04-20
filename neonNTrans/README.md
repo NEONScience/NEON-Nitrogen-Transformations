@@ -13,11 +13,11 @@ The single function contained in this package, def.calc.ntrans, has the followin
 
 1.  Download data from the NEON data portal - Soil inorganic nitrogen pools and transformations, NEON.DP1.10080 and Soil physical properties (Distributed periodic), NEON.DP1.10086 are both needed.
 2.  *optional* Use functions for downloading and/or stacking monthly data files from the neonUtilities package (zipsByProduct and stackByTable) in the NEON-utilities repository (<https://github.com/NEONScience/NEON-utilities>). See package README for helpful example code.
-3.  load the function:
+3.  load the package:
 
          library(devtools)  
-         install_github("NEONScience/NEON-Nitrogen-Transformations/def.calc.ntrans", dependencies=TRUE)  
-         library (def.calc.ntrans)  
+         install_github("NEONScience/NEON-Nitrogen-Transformations/neonNTrans", dependencies=TRUE)  
+         library(neonNTrans)  
 
 4.  Load files for each input table required by the function. Note that the soil moisture table (soilMoist) is part of the Soil physical properties (Distributed periodic) data product.
 5.  run the function:

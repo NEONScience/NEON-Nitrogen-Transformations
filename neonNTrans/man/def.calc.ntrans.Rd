@@ -21,11 +21,11 @@ kcl extractions and blanks. Data product table name is ntr_externalLab}
 \item{soilMoist}{A data frame containing soil moisture values. Data product
 table name is sls_soilMoisture}
 
-\item{dropConditions}{An optional list of condition values for which to exclude
-concentration measurements}
+\item{dropConditions}{An optional list of sampleCondition or dataQF values for which to exclude
+ammonium and nitrate concentration measurements}
 
-\item{dropFlagged}{An option to exclude concentration measurements for
-samples with quality flags, defaults to F}
+\item{dropFlagged}{An option to exclude ammonium and nitrate concentration measurements for
+samples with external lab quality flags, defaults to F}
 
 \item{keepAll}{An option to keep all variables and blank info used in calculations. 
 Defaults to F, meaning only sample information (not blanks), critical input variables, 
@@ -33,13 +33,13 @@ and calculated outputs will be included in the output data frame.}
 }
 \value{
 A data frame of soil inorganic N concentrations in micrograms per gram
-  in t-initial and t-final soil cores, as well as net N transformation rates
+  in t-initial and t-final soil samples, as well as net N transformation rates
   for t-final cores. Rows for blank samples are not included when keepAll = F.
 }
 \description{
 Calculate soil extractable inorganic nitrogen concentrations and
-net transformation rates for NEON L1 data. Consider using the
-neonDataStackR function to stack monthly files prior to use of this function.
+net N transformation rates for NEON L1 data. Can use the
+neonUtilities package (zipsByProduct and stackByTable) to download and stack monthly files prior to running this function.
 }
 \examples{
 \dontrun{
@@ -49,7 +49,7 @@ df3 <- "path/to/data/ntr_ntr_externalLab"
 df4 <- "path/to/data/sls_soilMoisture"
 
 out <- def.calc.ntrans(kclInt = df1, kclIntBlank = df2, kclExt =df3, soilMoist = df4,
-dropConditions = c("thawed & warm"), dropFlagged = T)
+dropConditions = c("deprecatedMethod", "other"), dropFlagged = T)
 }
 }
 \references{
