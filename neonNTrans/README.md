@@ -9,18 +9,18 @@ This package is for calculating soil extractable inorganic nitrogen (N) concentr
 Usage
 -----
 
-The single function contained in this package, def.calc.ntrans, has the following purpose: (1) join variables across tables and data products (2) calculate blank-corrected inorganic N concentrations in KCl extracts (3) convert from N concentrations in extracts (mg N/L) to soil extractable N concentrations (ug N/g), and (4) calculate net mineralization and nitrification rates using intital and incubated core pairs. See the function help file for additional details. The general flow of using this package is:
+The single function contained in this package, def.calc.ntrans, has the following purpose: (1) join variables across tables (2) calculate blank-corrected inorganic N concentrations in KCl extracts (3) convert from N concentrations in extracts (mg N/L) to soil extractable N concentrations (ug N/g dry soil), and (4) calculate net N mineralization and nitrification rates using intital and incubated core pairs. See the function help file for additional details. The general flow of using this package is:
 
-1.  Download data from the NEON data portal - Soil inorganic nitrogen pools and transformations, NEON.DP1.10080 and Soil physical properties (Distributed periodic), NEON.DP1.10086 are both needed.
-2.  *optional* Use functions for downloading and/or stacking monthly data files from the neonUtilities package (zipsByProduct and stackByTable) in the NEON-utilities repository (<https://github.com/NEONScience/NEON-utilities>). See package README for helpful example code.
-3.  load the package:
+1.  Download data from the NEON data portal: NEON.DP1.10080, Soil inorganic nitrogen pools and transformations.
+2.  *Optional* Use functions for downloading and/or stacking monthly data files from the neonUtilities package (zipsByProduct and stackByTable) in the NEON-utilities repository (<https://github.com/NEONScience/NEON-utilities>). See package README for example code.
+3.  Load the def.calc.ntrans package:
 
          library(devtools)  
          install_github("NEONScience/NEON-Nitrogen-Transformations/neonNTrans", dependencies=TRUE)  
          library(neonNTrans)  
 
-4.  Load files for each input table required by the function. Note that the soil moisture table (soilMoist) is part of the Soil physical properties (Distributed periodic) data product.
-5.  run the function:
+4.  Load files for each of the four input tables required by the function.
+5.  Run the function:
 
         out <- def.calc.ntrans(kclInt = df1, kclIntBlank = df2, kclExt = df3, soilMoist = df4) 
 
