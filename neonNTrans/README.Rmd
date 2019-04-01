@@ -21,20 +21,36 @@ This package is for calculating soil extractable inorganic nitrogen (N) concentr
 ## Usage
 The single function contained in this package, def.calc.ntrans, has the following purpose: (1) join variables across tables (2) calculate blank-corrected inorganic N concentrations in KCl extracts (3) convert from N concentrations in extracts (mg N/L) to soil extractable N concentrations (ug N/g dry soil), and (4) calculate net N mineralization and nitrification rates using intital and incubated core pairs. See the function help file for additional details. The general flow of using this package is:
 
-1. Download data from the NEON data portal: NEON.DP1.10080, Soil inorganic nitrogen pools and transformations.
-2. _Optional_ Use functions for downloading and/or stacking monthly data files from the neonUtilities package (zipsByProduct and stackByTable) in the NEON-utilities repository (https://github.com/NEONScience/NEON-utilities). See package README for example code.
-3. Load the def.calc.ntrans package:  
+1. Download data for NEON.DP1.10080, Soil inorganic nitrogen pools and transformations.
+2. _Recommended Workflow_ Use functions from the neonUtilities package (in the NEON-utilities repository https://github.com/NEONScience/NEON-utilities or on CRAN) to download files and/or read files directly into R. See neonUtilities package README for more details.
 ```
- library(devtools)  
+ library(devtools) 
+ install_github("NEONScience/NEON-utilities/neonUtilties", dependencies=TRUE)  
+ library(neonUtilties)  
+ NTR <- loadByProduct(site = "LENO", dpID = "DP1.10080.001", package = "basic", check.size = F)
+```
+3. Alternatively, download files manually from the NEON data portal.
+4. Load the def.calc.ntrans package:  
+```
  install_github("NEONScience/NEON-Nitrogen-Transformations/neonNTrans", dependencies=TRUE)  
  library(neonNTrans)  
 ```
-4. Load files for each of the four input tables required by the function.
-5. Run the function:  
+5. Run the function with data loaded to R using the loadByProduct() example above
 ```
+out <- def.calc.ntrans(kclInt = NTR$ntr_internalLab, 
+                           kclIntBlank = NTR$ntr_internalLabBlanks, 
+                           kclExt = NTR$ntr_externalLab, 
+                           soilMoist = NTR$sls_soilMoisture)
+```
+6. Alternatively, run the function with files for each of the four required input tables loaded manually
+```
+df1 <- "path/to/data/ntr_internalLab"
+df2 <- "path/to/data/ntr_internalLabBlanks"
+df3 <- "path/to/data/ntr_ntr_externalLab"
+df4 <- "path/to/data/sls_soilMoisture"
 out <- def.calc.ntrans(kclInt = df1, kclIntBlank = df2, kclExt = df3, soilMoist = df4) 
 ```
-Returns a data frame with inorganic N concentrations in ug N per g dry soil and net N transformation rates in ug N per g per day for incubated samples if data from both initial and final cores are available. Defaults to keepAll = F, meaning the output is a simplified dataframe containing only sample information, critical input variables, and calculated outputs. 
+Returns a data frame with inorganic N concentrations in ug N per g dry soil and net N transformation rates in ug N per g per day for incubated samples if data from both initial and final cores are available. Defaults to keepAll = F, meaning the output is a simplified dataframe containing only sample information, critical input variables, and calculated outputs. Function will not run if inorganic N concentrations from KCl extractions are not yet available.
 
 <!-- ****** Calculation Summary ****** -->
 ## Calculation Summary
