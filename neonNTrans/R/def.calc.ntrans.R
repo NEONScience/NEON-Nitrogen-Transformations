@@ -84,6 +84,8 @@ def.calc.ntrans <- function(kclInt,
   }
   
   # join the internal and external lab data
+  kclExt$sampleCode <- as.factor(kclExt$sampleCode)
+  kclInt$sampleCode <- as.factor(kclInt$sampleCode)
   suppressWarnings(suppressMessages(combinedDF <- left_join(kclExt, kclInt, 
                                                             by = c("sampleID", 
                                                                    "sampleCode",
