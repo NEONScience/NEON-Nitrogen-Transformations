@@ -109,12 +109,12 @@ def.calc.ntrans <- function(kclInt,
     # how many values got set to NA with extneral lab condition filtering
     if (any(combinedDF$sampleCondition.x %in% dropConditions)) {
       num1 <-
-        length(combinedDF$sampleID.x[combinedDF$sampleCondition.x %in% dropConditions])
+        length(combinedDF$sampleID[combinedDF$sampleCondition.x %in% dropConditions])
       warning1 <-
         paste(
           'warning:',
           num1,
-          'records had concentration values set to NA due to anomolous external lab sample conditions',
+          'records had concentration values set to NA due to external lab sample conditions',
           sep = " "
         )
       print(warning1)
@@ -123,12 +123,12 @@ def.calc.ntrans <- function(kclInt,
     # how many values got set to NA with internal lab condition filtering
     if (any(combinedDF$sampleCondition.y %in% dropConditions)) {
       num1a <-
-        length(combinedDF$sampleID.x[combinedDF$sampleCondition.y %in% dropConditions])
+        length(combinedDF$sampleID[combinedDF$sampleCondition.y %in% dropConditions])
       warning1a <-
         paste(
           'warning:',
           num1a,
-          'records had concentration values set to NA due to anomolous NEON lab sample conditions',
+          'records had concentration values set to NA due to NEON lab sample conditions',
           sep = " "
         )
       print(warning1a)
@@ -137,12 +137,12 @@ def.calc.ntrans <- function(kclInt,
     # how many values got set to NA with external lab dataQF filtering
     if (any(grepl(paste(dropConditions, collapse = "|"), combinedDF$dataQF.x))) {
       num2 <-
-        length(combinedDF$sampleID.x[grepl(paste(dropConditions, collapse = "|"), combinedDF$dataQF.x)])
+        length(combinedDF$sampleID[grepl(paste(dropConditions, collapse = "|"), combinedDF$dataQF.x)])
       warning2 <-
         paste(
           'warning:',
           num2,
-          'records (including blanks) had concentration values set to NA due to data quality issues',
+          'records had concentration values set to NA due to data quality issues',
           sep = " "
         )
       print(warning2)
@@ -151,7 +151,7 @@ def.calc.ntrans <- function(kclInt,
     # how many values got set to NA with internal lab dataQF filtering
     if (any(grepl(paste(dropConditions, collapse = "|"), combinedDF$dataQF.y))) {
       num2a <-
-        length(combinedDF$sampleID.x[grepl(paste(dropConditions, collapse = "|"), combinedDF$dataQF.y)])
+        length(combinedDF$sampleID[grepl(paste(dropConditions, collapse = "|"), combinedDF$dataQF.y)])
       warning2a <-
         paste(
           'warning:',
