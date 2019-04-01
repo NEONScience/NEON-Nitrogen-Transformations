@@ -25,7 +25,7 @@ table name is sls_soilMoisture}
 ammonium and nitrate concentration measurements}
 
 \item{dropFlagged}{An option to exclude ammonium and nitrate concentration measurements for
-samples with external lab quality flags, defaults to F}
+samples with external lab quality flags. Defaults to F}
 
 \item{keepAll}{An option to keep all variables and blank info used in calculations. 
 Defaults to F, meaning only sample information (not blanks), critical input variables, 
@@ -34,15 +34,25 @@ and calculated outputs will be included in the output data frame.}
 \value{
 A data frame of soil inorganic N concentrations in micrograms per gram
   in t-initial and t-final soil samples, as well as net N transformation rates
-  for t-final cores. Rows for blank samples are not included when keepAll = F.
+  for t-final cores. Rows for blank samples are not included when keepAll = F (default).
 }
 \description{
 Calculate soil extractable inorganic nitrogen concentrations and
-net N transformation rates for NEON L1 data. Can use the
-neonUtilities package (zipsByProduct and stackByTable) to download and stack monthly files prior to running this function.
+net N transformation rates for NEON L1 data. It is recommended to use the
+neonUtilities package to download data prior to running this function.
 }
 \examples{
 \dontrun{
+Load data to R using loadByProduct (neonUtilties)
+
+NTR <- loadByProduct(site = "GUAN", dpID = "DP1.10080.001", 
+package = "basic", check.size = F)
+
+out <- def.calc.ntrans(kclInt = NTR$ntr_internalLab, kclIntBlank = NTR$ntr_internalLabBlanks, 
+kclExt = NTR$ntr_externalLab, soilMoist = NTR$sls_soilMoisture)
+
+# If data is downloaded to a computer
+
 df1 <- "path/to/data/ntr_internalLab"
 df2 <- "path/to/data/ntr_internalLabBlanks"
 df3 <- "path/to/data/ntr_ntr_externalLab"
