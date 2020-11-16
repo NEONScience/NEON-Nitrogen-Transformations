@@ -4,62 +4,107 @@
 \alias{def.calc.ntrans}
 \title{NEON Soil Inorganic N Concentrations and Net N Transformation Rates}
 \usage{
-def.calc.ntrans(kclInt, kclIntBlank, kclExt, soilMoist, dropConditions,
-  dropFlagged = FALSE, keepAll = FALSE)
+def.calc.ntrans(
+  kclInt,
+  kclIntBlank,
+  kclExt,
+  soilMoist,
+  dropConditions,
+  dropAmmoniumFlags,
+  dropNitrateFlags
+)
 }
 \arguments{
-\item{kclInt}{A data frame containing soil masses and kcl volumes used in kcl
+\item{kclInt}{A data frame containing soil masses and kcl volumes used in KCl
 extractions. Data product table name is ntr_internalLab}
 
-\item{kclIntBlank}{A data frame containing information needed to link kcl
+\item{kclIntBlank}{A data frame containing information needed to link KCl
 extraction samples to procedural blanks. Data product table name is
 ntr_internalLabBlanks}
 
 \item{kclExt}{A data frame containing inorganic N concentrations measured in
-kcl extractions and blanks. Data product table name is ntr_externalLab}
+KCl extractions and blanks. Data product table name is ntr_externalLab}
 
 \item{soilMoist}{A data frame containing soil moisture values. Data product
 table name is sls_soilMoisture}
 
 \item{dropConditions}{An optional list of sampleCondition or dataQF values for which to exclude
-ammonium and nitrate concentration measurements}
+ammonium and nitrate N concentration measurements (set them to NA). See categorical codes file 
+and data product user guide for more on these fields.}
 
-\item{dropFlagged}{An option to exclude ammonium and nitrate concentration measurements for
-samples with external lab quality flags. Defaults to F}
+\item{dropAmmoniumFlags}{An optional list of ammoniumNQF values for which to exclude
+ammonium N concentration measurements (set them to NA). See categorical codes file 
+and data product user guide for more on these fields.}
 
-\item{keepAll}{An option to keep all variables and blank info used in calculations. 
-Defaults to F, meaning only sample information (not blanks), critical input variables, 
-and calculated outputs will be included in the output data frame.}
+\item{dropNitrateFlags}{An optional list of nitrateNitriteNQF values for which to exclude
+nitrate+nitrite N concentration measurements (set them to NA). See categorical codes file 
+and data product user guide for more on these fields.}
 }
 \value{
-A data frame of soil inorganic N concentrations in micrograms per gram
-  in t-initial and t-final soil samples, as well as net N transformation rates
-  for t-final cores. Rows for blank samples are not included when keepAll = F (default).
+A list that contains at least 2 data frames, and up to 5 depending on specified parameters. 
+all_data is a combined dataframe of external and internal lab measurements,
+plus blank-corrected concentrations normalized by soil mass as well as net rates in T-final 
+incubated samples. data_summary is a cleaned-up version of this information showing only
+calculated variables and excluding lab metadata. Users will likely wish to use this table for downstream
+analyses and can join on sampleID to link with other NEON soil measurements. dropped_condition is 
+a dataframe that shows which samples had values set to NA due to dropCondition inputs (if applicable). dropped_flags
+is a dataframe that shows which samples had values set to NA due to dropAmmoniumFlags and/or
+dropNitrateFlags inputs (if applicable). dropped_moisture is a dataframe that shows which samples are
+missing soil moisture, thus precluding downstream calculations.
 }
 \description{
 Calculate soil extractable inorganic nitrogen concentrations and
-net N transformation rates for NEON L1 data. It is recommended to use the
-neonUtilities package to download data prior to running this function.
+net N transformation rates for NEON L1 data. Recommend using the
+neonUtilities package to download data from DP1.10086.001 prior to running this function. 
+Function requires several data product tables as inputs in order to complete calculations.
+}
+\details{
+The function calculates blank-corrected concentration data using the mean of all blanks
+extracted with a batch of samples, then normalizes these per gram dry soil (and per day for rates).
+Any negative blank-corrected KCl extraction data are set to 0 before proceeding with 
+further transformations. This is robust for slightly negative values near method detection limits (0.01-0.02). However, 
+highly negative values (< -0.02) may indicate an issue. Extensive troubleshooting by NEON suggests this was prevalent 
+in samples collected prior to 2020 due to high nitrite in the KCl powder used for extractions. This nitrite was 
+chemodenitrified (removed as a gas) under the acidic conditions of samples but not blanks, e.g., the very 
+negative values are most often a contamination artifact. Instead of setting these highly negative values to 0, we recommend 
+excluding them altogether, since there may have been N in the sample but it was not detectable given method artifacts.
+Values with blank-corrected values < -0.02 are flagged by NEON, thus users can easily exclude them using the following arguments
+in the function: dropAmmoniumFlags = "blanks exceed sample value", dropNitrateFlags = "blanks exceed sample value". 
+If these arguments are not used, all negative values will be converted to 0 and included in the analyses.
 }
 \examples{
 \dontrun{
-Load data to R using loadByProduct (neonUtilties)
+If data are loaded to R using loadByProduct (neonUtilties)
 
-NTR <- loadByProduct(site = "GUAN", dpID = "DP1.10080.001", 
-package = "basic", check.size = F)
+soilData <- loadByProduct(
+site = c("GUAN", "HARV", "KONZ"),
+dpID = "DP1.10086.001", 
+package = "basic", 
+check.size = F)
 
-out <- def.calc.ntrans(kclInt = NTR$ntr_internalLab, kclIntBlank = NTR$ntr_internalLabBlanks, 
-kclExt = NTR$ntr_externalLab, soilMoist = NTR$sls_soilMoisture)
+out <- def.calc.ntrans(
+kclInt = soilData$ntr_internalLab, 
+kclIntBlank = soilData$ntr_internalLabBlanks, 
+kclExt = soilData$ntr_externalLab, 
+soilMoist = soilData$sls_soilMoisture, 
+dropAmmoniumFlags = "blanks exceed sample value", 
+dropNitrateFlags = "blanks exceed sample value" 
+)
 
-# If data is downloaded to a computer
+# If data are downloaded to a computer, then need to be loaded manually
 
 df1 <- "path/to/data/ntr_internalLab"
 df2 <- "path/to/data/ntr_internalLabBlanks"
 df3 <- "path/to/data/ntr_ntr_externalLab"
 df4 <- "path/to/data/sls_soilMoisture"
 
-out <- def.calc.ntrans(kclInt = df1, kclIntBlank = df2, kclExt =df3, soilMoist = df4,
-dropConditions = c("deprecatedMethod", "other"), dropFlagged = T)
+out <- def.calc.ntrans(
+kclInt = df1, 
+kclIntBlank = df2, 
+kclExt =df3, 
+soilMoist = df4,
+dropConditions = c("deprecatedMethod", "other"), 
+)
 }
 }
 \references{
