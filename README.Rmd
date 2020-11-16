@@ -15,11 +15,11 @@ knitr::opts_chunk$set(
 ```
 <!-- ****** Description ****** -->
 
-This repository is for code that can be used to calculate soil extractable inorganic nitrogen (N) concentrations and net N transformation rates (mineralization and nitrification) from soil KCl extracts.
+This repository is for code that can be used to calculate soil extractable inorganic nitrogen (N) concentrations and net N transformation rates (mineralization and nitrification) from NEON soil KCl extracts.
 
 <!-- ****** Usage ****** -->
 ## Usage
-This repository is designed to be used with the NEON Soil inorganic nitrogen pools and transformations data product (NEON.DP1.10080).
+This repository is designed to be used with several tables in the Soil physical and chemical properties, periodic data product (NEON.DP1.10086).
 
 
 <!-- ****** Acknowledgements ****** -->
