@@ -364,7 +364,7 @@ def.calc.ntrans <- function(kclInt,
         "soilInorganicNugPerGram",
         "soilNitrateNitriteNugPerGram"
       ),
-      #fun = mean,
+      fun = mean, # need this in case of non-unique values, will take mean
       na.rm = T
     )
   
