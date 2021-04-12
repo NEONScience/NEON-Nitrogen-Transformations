@@ -10,8 +10,6 @@ Description: Contains a function to calculate soil inorganic nitrogen
     transformation rates (minerailzation and nitrification) from paired,
     incubated samples.
 Depends: 
-    R (>= 3.3.2)
-Imports:
     dplyr,
     data.table
 License: AGPL-3 + file LICENSE
