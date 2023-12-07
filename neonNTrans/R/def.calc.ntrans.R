@@ -324,8 +324,7 @@ def.calc.ntrans <- function(kclInt,
                                          "no", ifelse(nitrateNitriteNQF %in% dropNitrateFlags, "yes", "no")), 
                nitrateDroppedQF = ifelse(is.na(nitrateDroppedQF), "no", nitrateDroppedQF),
                kclNitrateNitriteNBlankCor = ifelse(is.na(kclNitrateNitriteNConc), NA, kclNitrateNitriteNBlankCor))
-        }           
-                                               
+
 
     # compile list of how many nitrate + nitrite values got set to NA with filtering
     if (sum(combinedDF_2$nitrateDroppedQF == "yes") > 0) {
@@ -339,14 +338,32 @@ def.calc.ntrans <- function(kclInt,
         )
       print(warning4)
     } 
+    }
 
   # Export list of samples excluded due to ammonium and nitrate QF values
-  if(!missing(dropAmmoniumFlags) | !missing(dropNitrateFlags)){
-    combinedDF_flag_dropped <- combinedDF_2 %>% 
-      filter(ammoniumNQF %in% dropAmmoniumFlags |
-               nitrateDroppedQF == "yes") %>%
+  if(!missing(dropAmmoniumFlags)){
+    combinedDF_NH4QF_dropped <- combinedDF_2 %>% 
+      filter(ammoniumNQF %in% dropAmmoniumFlags) %>%
       select(sampleID, kclSampleID, ammoniumNQF, nitrateNitriteNQF)
   }
+  
+  if(!missing(dropNitrateFlags)){
+    combinedDF_NO3QF_dropped <- combinedDF_2 %>% 
+      filter(nitrateDroppedQF == "yes") %>%
+      select(sampleID, kclSampleID, ammoniumNQF, nitrateNitriteNQF)
+  }
+  
+  if(exists("combinedDF_NH4QF_dropped") & exists("combinedDF_NO3QF_dropped")){
+    combinedDF_flag_dropped <- bind_rows(combinedDF_NH4QF_dropped, combinedDF_NO3QF_dropped)
+  }
+  
+  if(exists("combinedDF_NH4QF_dropped") & !exists("combinedDF_NO3QF_dropped")){
+    combinedDF_flag_dropped <- combinedDF_NH4QF_dropped
+  }
+  
+  if(!exists("combinedDF_NH4QF_dropped") & exists("combinedDF_NO3QF_dropped")){
+    combinedDF_flag_dropped <- combinedDF_NO3QF_dropped
+    }
   
   # Set remaining negatives to 0, add mass and soil moisture, then normalize per gram dry soil ----
     combinedDF_3 <- combinedDF_2 %>%
@@ -429,7 +446,11 @@ def.calc.ntrans <- function(kclInt,
         netNitugPerGramPerDay = ifelse(nTransBoutType == "tInitial", NA, netNitugPerGramPerDay)
       )
   )) %>%
-    select(-c(ammoniumNRepNum, nitrateNitriteNRepNum, nitrateDroppedQF))
+    select(-c(ammoniumNRepNum, nitrateNitriteNRepNum))
+           
+  if("nitrateDropped" %in% colnames(combinedDF_3)) {
+    combinedDF_3 <- select(combinedDF_3, -nitrateDroppedQF)
+  }
   
   # Collapse concentrations and rates onto one line for the incubation pair, samples only ----
   combinedDF_collapse <- combinedDF_3 %>%
