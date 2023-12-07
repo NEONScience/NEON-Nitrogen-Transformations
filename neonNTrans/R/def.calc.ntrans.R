@@ -67,7 +67,9 @@
 
 #' @references
 #' License: GNU AFFERO GENERAL PUBLIC LICENSE Version 3, 19 November 2007
+#' 
 #' Homyak, P.M., Vasquez, K.T., Sickman, J.O., Parker, D.R. and Schimel, J.P. (2015). Improving Nitrite Analysis in Soils: Drawbacks of the Conventional 2 M KCl Extraction. Soil Science Society of America Journal, 79: 1237‐1242. doi:10.2136/sssaj2015.02.0061n
+#' 
 #' Weintraub-Leff, S.R., Hall, S.J., Craig, M.E., Sihi, D., Wang, Z. and Hart, S.C. (2023). Standardized data to improve understanding and modeling of soil nitrogen at continental scale. Earth's Future, 11, e2022EF003224. doi.org/10.1029/2022EF003224
 
 #' @keywords soil, nitrogen, mineralization, nitrification
