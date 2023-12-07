@@ -9,6 +9,7 @@ def.calc.ntrans(
   kclIntBlank,
   kclExt,
   soilMoist,
+  noxCorrection = T,
   dropConditions,
   dropAmmoniumFlags,
   dropNitrateFlags
@@ -22,15 +23,19 @@ extractions. Data product table name is ntr_internalLab}
 extraction samples to procedural blanks. Data product table name is
 ntr_internalLabBlanks}
 
-\item{kclExt}{A data frame containing inorganic N concentrations measured in
+\item{kclExt}{A data frame containing inorganic N concentrations measured in sample
 KCl extractions and blanks. Data product table name is ntr_externalLab}
 
 \item{soilMoist}{A data frame containing soil moisture values. Data product
 table name is sls_soilMoisture}
 
+\item{noxCorrection}{A parameter that specifies whether the quantile regression
+approach outlined in Weintraub-Leff et al (2023) should be used to correct for 
+contaminant nitrite in 2021 and earlier data, defaults to T}
+
 \item{dropConditions}{An optional list of sampleCondition or dataQF values for which to exclude
-ammonium and nitrate N concentration measurements (set them to NA). See categorical codes file 
-and data product user guide for more on these fields.}
+ammonium and nitrate + nitrite N concentration measurements (set them to NA). 
+See categorical codes file and data product user guide for more on these fields.}
 
 \item{dropAmmoniumFlags}{An optional list of ammoniumNQF values for which to exclude
 ammonium N concentration measurements (set them to NA). See categorical codes file 
@@ -38,7 +43,10 @@ and data product user guide for more on these fields.}
 
 \item{dropNitrateFlags}{An optional list of nitrateNitriteNQF values for which to exclude
 nitrate+nitrite N concentration measurements (set them to NA). See categorical codes file 
-and data product user guide for more on these fields.}
+and data product user guide for more on these fields. If 'blanks exceed sample value'
+is selected along with the default noxCorrection = T, values are only dropped if
+they still blank-correct negative after the correction is applied (relevant 
+to pre-2022 data).}
 }
 \value{
 A list that contains at least 2 data frames, and up to 5 depending on specified parameters. 
@@ -47,10 +55,10 @@ plus blank-corrected concentrations normalized by soil mass as well as net rates
 incubated samples. data_summary is a cleaned-up version of this information showing only
 calculated variables and excluding lab metadata. Users will likely wish to use this table for downstream
 analyses and can join on sampleID to link with other NEON soil measurements. dropped_condition is 
-a dataframe that shows which samples had values set to NA due to dropCondition inputs (if applicable). dropped_flags
-is a dataframe that shows which samples had values set to NA due to dropAmmoniumFlags and/or
-dropNitrateFlags inputs (if applicable). dropped_moisture is a dataframe that shows which samples are
-missing soil moisture, thus precluding downstream calculations.
+a dataframe that shows which samples had values set to NA due to dropCondition inputs (if applicable). 
+dropped_flags is a dataframe that shows which samples had values set to NA due to dropAmmoniumFlags 
+and/or dropNitrateFlags inputs (if applicable). dropped_moisture is a dataframe that shows which samples 
+are missing soil moisture (if), thus precluding downstream calculations.
 }
 \description{
 Calculate soil extractable inorganic nitrogen concentrations and
@@ -60,17 +68,25 @@ Function requires several data product tables as inputs in order to complete cal
 }
 \details{
 The function calculates blank-corrected concentration data using the mean of all blanks
-extracted with a batch of samples, then normalizes these per gram dry soil (and per day for rates).
-Any negative blank-corrected KCl extraction data are set to 0 before proceeding with 
-further transformations. This is robust for slightly negative values near method detection limits (0.01-0.02). However, 
-highly negative values (< -0.02) may indicate an issue. Extensive troubleshooting by NEON suggests this was prevalent 
-in samples collected prior to 2020 due to high nitrite in the KCl powder used for extractions. This nitrite was 
-chemodenitrified (removed as a gas) under the acidic conditions of samples but not blanks, e.g., the very 
-negative values are most often a contamination artifact. Instead of setting these highly negative values to 0, we recommend 
-excluding them altogether, since there may have been N in the sample but it was not detectable given method artifacts.
-Values with blank-corrected values < -0.02 are flagged by NEON, thus users can easily exclude them using the following arguments
-in the function: dropAmmoniumFlags = "blanks exceed sample value", dropNitrateFlags = "blanks exceed sample value". 
-If these arguments are not used, all negative values will be converted to 0 and included in the analyses.
+extracted with a batch of samples, then normalizes these per gram dry soil (and per day for net rates). 
+
+Data from certain sites collected prior to 2022 exhibit frequent blank-corrected nitrate + nitrite 
+concentrations significantly negative beyond background noise (< -0.02). This was caused by inadvertently 
+using batches of potassium chloride (KCl) for soil extractions with high nitrite contamination. Nitrite is 
+chemodenitrified, or abiotically converted to nitrogen gas and lost, in the presence of acidic soil 
+but not in blanks (Homyak et al. 2015), which causes this artifact. It is possible to correct the affected 
+data using a quantile regression, essentially 'adding back' the lost nitrite and removing apparent 
+negatives (Weintraub-Leff at al. 2023). This correction is applied by the function to all data collected 
+in 2021 and earlier, unless users select noxCorrection = F. Starting with the 2022 sampling season and 
+onward, all batches of KCl are purity tested before use, greatly reducing (although not eliminating) 
+the occurrence of blank-corrected sample concentration values < -0.02. 
+
+After applying the noxCorrection (for pre-2022 data), any remaining negative 
+blank-corrected concentration values are set to 0 by the function before proceeding with 
+further data transformations. Concentration values that blank-correct to < -0.02 are flagged by NEON
+in the ntr_externalLab table, thus if users would rather exclude these data points instead of using
+the noxCorrection and/or assigning them to zero, they should specify function parameters 
+dropAmmoniumFlags or dropNitrateFlags = "blanks exceed sample value".
 }
 \examples{
 \dontrun{
@@ -87,8 +103,8 @@ kclInt = soilData$ntr_internalLab,
 kclIntBlank = soilData$ntr_internalLabBlanks, 
 kclExt = soilData$ntr_externalLab, 
 soilMoist = soilData$sls_soilMoisture, 
-dropAmmoniumFlags = "blanks exceed sample value", 
-dropNitrateFlags = "blanks exceed sample value" 
+dropConditions = c("extract stored at incorrect temperature", "soil stored at incorrect temperature", 
+"mass uncertain", "volume uncertain") 
 )
 
 # If data are downloaded to a computer, then need to be loaded manually
@@ -103,18 +119,21 @@ kclInt = df1,
 kclIntBlank = df2, 
 kclExt =df3, 
 soilMoist = df4,
-dropConditions = c("deprecatedMethod", "other"), 
+noxCorrection = F, 
+dropNitrateFlags = "blanks exceed sample value" 
 )
 }
 }
 \references{
 License: GNU AFFERO GENERAL PUBLIC LICENSE Version 3, 19 November 2007
+Homyak, P.M., Vasquez, K.T., Sickman, J.O., Parker, D.R. and Schimel, J.P. (2015). Improving Nitrite Analysis in Soils: Drawbacks of the Conventional 2 M KCl Extraction. Soil Science Society of America Journal, 79: 1237‐1242. doi:10.2136/sssaj2015.02.0061n
+Weintraub-Leff, S.R., Hall, S.J., Craig, M.E., Sihi, D., Wang, Z. and Hart, S.C. (2023). Standardized data to improve understanding and modeling of soil nitrogen at continental scale. Earth's Future, 11, e2022EF003224. doi.org/10.1029/2022EF003224
 }
 \seealso{
 Currently none
 }
 \author{
-Samantha Weintraub \email{sweintraub@battelleecology.org}
+Samantha Weintraub-Leff \email{sweintraub@battelleecology.org}
 }
 \keyword{mineralization,}
 \keyword{nitrification}
