@@ -337,8 +337,7 @@ def.calc.ntrans <- function(kclInt,
         )
       print(warning4)
     } 
-    } 
-  
+
   # Export list of samples excluded due to ammonium and nitrate QF values
   if(!missing(dropAmmoniumFlags) | !missing(dropNitrateFlags)){
     combinedDF_flag_dropped <- combinedDF_2 %>% 
