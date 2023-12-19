@@ -448,7 +448,7 @@ def.calc.ntrans <- function(kclInt,
   )) %>%
     select(-c(ammoniumNRepNum, nitrateNitriteNRepNum))
            
-  if("nitrateDropped" %in% colnames(combinedDF_3)) {
+  if("nitrateDroppedQF" %in% colnames(combinedDF_3)) {
     combinedDF_3 <- select(combinedDF_3, -nitrateDroppedQF)
   }
   
