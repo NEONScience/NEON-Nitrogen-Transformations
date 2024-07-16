@@ -365,8 +365,10 @@ def.calc.ntrans <- function(kclInt,
     combinedDF_flag_dropped <- combinedDF_NO3QF_dropped
   }
   
+  if (exists("combinedDF_flag_dropped")){
   if(nrow(combinedDF_flag_dropped) == 0){
     rm(combinedDF_flag_dropped)
+  }
   }
   
   # Set remaining negatives to 0, add mass and soil moisture, then normalize per gram dry soil ----
