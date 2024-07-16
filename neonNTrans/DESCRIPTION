@@ -2,7 +2,7 @@ Package: neonNTrans
 Type: Package
 Date: 2017-12-01
 Title: NEON Nitrogen Transformations
-Version: 0.3.0
+Version: 0.3.1
 Author: person("Samantha", "Weintraub-Leff", email = "sweintraub@battelleecology.org", 
     role = c("aut", "cre"))
 Description: Contains a function to calculate soil inorganic nitrogen 
