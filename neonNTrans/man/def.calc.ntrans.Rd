@@ -49,16 +49,22 @@ they still blank-correct negative after the correction is applied (relevant
 to pre-2022 data).}
 }
 \value{
-A list that contains at least 2 data frames, and up to 5 depending on specified parameters. 
-all_data is a combined dataframe of external and internal lab measurements,
-plus blank-corrected concentrations normalized by soil mass as well as net rates in T-final 
-incubated samples. data_summary is a cleaned-up version of this information showing only
-calculated variables and excluding lab metadata. Users will likely wish to use this table for downstream
-analyses and can join on sampleID to link with other NEON soil measurements. dropped_condition is 
-a dataframe that shows which samples had values set to NA due to dropCondition inputs (if applicable). 
-dropped_flags is a dataframe that shows which samples had values set to NA due to dropAmmoniumFlags 
-and/or dropNitrateFlags inputs (if applicable). dropped_moisture is a dataframe that shows which samples 
-are missing soil moisture (if), thus precluding downstream calculations.
+A list that contains at least 1 data frame, and up to 5 depending on the
+type of input data and specified parameters. `all_data` is a combined dataframe of 
+external and internal lab measurements, plus blank-corrected concentrations 
+normalized by soil mass and net rates in T-final incubated samples if the T-Initial
+pair is also included in the data. `data_summary` is a cleaned-up version of this information 
+showing only calculated variables and excluding lab metadata. This table is produced
+in most cases but will be skipped if only T-Final data are included. Users will likely 
+wish to use this table for downstream analyses and can join on sampleID to link 
+with other NEON soil measurements. Missing data in the net rate columns 
+could be due to T-Final data not yet available, available but
+in an adjacent month not downloaded, or never coming due to samples lost or destroyed.
+`dropped_condition` is a dataframe that shows which samples had values set to 
+NA due to dropCondition inputs (if applicable). `dropped_flags` is a dataframe 
+that shows which samples had values set to NA due to dropAmmoniumFlags and/or 
+dropNitrateFlags inputs (if applicable). `dropped_moisture` is a dataframe that 
+shows which samples are missing soil moisture (if any), thus precluding downstream calculations.
 }
 \description{
 Calculate soil extractable inorganic nitrogen concentrations and

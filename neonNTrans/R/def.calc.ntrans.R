@@ -54,16 +54,22 @@
 #'   they still blank-correct negative after the correction is applied (relevant 
 #'   to pre-2022 data).
 
-#' @return A list that contains at least 2 data frames, and up to 5 depending on specified parameters. 
-#' all_data is a combined dataframe of external and internal lab measurements,
-#' plus blank-corrected concentrations normalized by soil mass as well as net rates in T-final 
-#' incubated samples. data_summary is a cleaned-up version of this information showing only
-#' calculated variables and excluding lab metadata. Users will likely wish to use this table for downstream
-#' analyses and can join on sampleID to link with other NEON soil measurements. dropped_condition is 
-#' a dataframe that shows which samples had values set to NA due to dropCondition inputs (if applicable). 
-#' dropped_flags is a dataframe that shows which samples had values set to NA due to dropAmmoniumFlags 
-#' and/or dropNitrateFlags inputs (if applicable). dropped_moisture is a dataframe that shows which samples 
-#' are missing soil moisture (if), thus precluding downstream calculations.
+#' @return A list that contains at least 1 data frame, and up to 5 depending on the
+#' type of input data and specified parameters. `all_data` is a combined dataframe of 
+#' external and internal lab measurements, plus blank-corrected concentrations 
+#' normalized by soil mass and net rates in T-final incubated samples if the T-Initial
+#' pair is also included in the data. `data_summary` is a cleaned-up version of this information 
+#' showing only calculated variables and excluding lab metadata. This table is produced
+#' in most cases but will be skipped if only T-Final data are included. Users will likely 
+#' wish to use this table for downstream analyses and can join on sampleID to link 
+#' with other NEON soil measurements. Missing data in the net rate columns 
+#' could be due to T-Final data not yet available, available but
+#' in an adjacent month not downloaded, or never coming due to samples lost or destroyed.
+#' `dropped_condition` is a dataframe that shows which samples had values set to 
+#' NA due to dropCondition inputs (if applicable). `dropped_flags` is a dataframe 
+#' that shows which samples had values set to NA due to dropAmmoniumFlags and/or 
+#' dropNitrateFlags inputs (if applicable). `dropped_moisture` is a dataframe that 
+#' shows which samples are missing soil moisture (if any), thus precluding downstream calculations.
 
 #' @references
 #' License: GNU AFFERO GENERAL PUBLIC LICENSE Version 3, 19 November 2007
@@ -128,6 +134,8 @@
 #   Samantha Weintraub-Leff (2023-12-07)
 #     new parameter to implement the quantile regression approach to correct for 
 #     contaminant nitrite in 2021 and earlier data
+#   Samantha Weintraub-Leff (2025-03-28)
+#     function update to enable it to run with only T-Initial or T-Final data
 ################################################################################
 
 # Function
@@ -411,7 +419,7 @@ def.calc.ntrans <- function(kclInt,
   
   # Create wide (cast) version of the df in order to calculate net rates with incubationPairID and nTransBoutType ----
   combinedDFforCast <- combinedDF_3 %>%
-    filter(!sampleID == "")
+    filter(!sampleID %in% c("", NA))
   
   cast1 <-
     data.table::dcast(
@@ -426,17 +434,19 @@ def.calc.ntrans <- function(kclInt,
       na.rm = T
     )
   
-  # Calculate net rates ----
-  cast1 <- cast1 %>%
-    mutate(
-      netInorganicNugPerGram = soilInorganicNugPerGram_tFinal - soilInorganicNugPerGram_tInitial,
-      netNitrateNitriteNugPerGram =  soilNitrateNitriteNugPerGram_tFinal - soilNitrateNitriteNugPerGram_tInitial,
-      netNminugPerGramPerDay = netInorganicNugPerGram / incubationLength_tFinal,
-      netNitugPerGramPerDay = netNitrateNitriteNugPerGram / incubationLength_tFinal
-    )
-  
-  # Attach net rates onto combined df ----
-  combinedDF_3 <- suppressWarnings(suppressMessages(
+  # Calculate net rates, IF dataset includes both t-initial & t-final  ----
+  if("soilInorganicNugPerGram_tInitial" %in% colnames(cast1) & 
+     "soilInorganicNugPerGram_tFinal" %in% colnames(cast1)){
+    cast1 <- cast1 %>%
+      mutate(
+        netInorganicNugPerGram = soilInorganicNugPerGram_tFinal - soilInorganicNugPerGram_tInitial,
+        netNitrateNitriteNugPerGram =  soilNitrateNitriteNugPerGram_tFinal - soilNitrateNitriteNugPerGram_tInitial,
+        netNminugPerGramPerDay = netInorganicNugPerGram / incubationLength_tFinal,
+        netNitugPerGramPerDay = netNitrateNitriteNugPerGram / incubationLength_tFinal
+      )
+
+  # Attach net rates onto combined df
+  combinedDF_4 <- suppressWarnings(suppressMessages(
     combinedDF_3 %>%
       left_join(
         select(
@@ -453,53 +463,68 @@ def.calc.ntrans <- function(kclInt,
       )
   )) %>%
     select(-c(ammoniumNRepNum, nitrateNitriteNRepNum))
-           
-  if("nitrateDroppedQF" %in% colnames(combinedDF_3)) {
-    combinedDF_3 <- select(combinedDF_3, -nitrateDroppedQF)
+  } else {
+    combinedDF_4 <- combinedDF_3 %>%
+      mutate(netNminugPerGramPerDay = NA, 
+             netNitugPerGramPerDay = NA)
+      }
+  
+  # Get rid of helper column
+  if("nitrateDroppedQF" %in% colnames(combinedDF_4)) {
+    combinedDF_4 <- select(combinedDF_4, -nitrateDroppedQF)
   }
   
   # Collapse concentrations and rates onto one line for the incubation pair, samples only ----
-  combinedDF_collapse <- combinedDF_3 %>%
-    mutate(
-      soilAmmoniumNugPerGram = ifelse(nTransBoutType == "tFinal", NA, soilAmmoniumNugPerGram), # get rid of extractable N data for t-final
-      soilNitrateNitriteNugPerGram = ifelse(nTransBoutType == "tFinal", NA, soilNitrateNitriteNugPerGram),
-      soilInorganicNugPerGram = ifelse(nTransBoutType == "tFinal", NA, soilInorganicNugPerGram)
-    ) %>%
-    filter(!sampleID == "") %>% # get rid of blanks
-    select(
-      incubationPairID,
-      soilAmmoniumNugPerGram,
-      soilNitrateNitriteNugPerGram,
-      soilInorganicNugPerGram,
-      netNminugPerGramPerDay,
-      netNitugPerGramPerDay
-    ) %>%
-    group_by(incubationPairID) %>%
-    summarise_all(list(~ if (is.numeric(.)) {
-      mean(., na.rm = TRUE)
-    } else {
-      first(.)
-    }))
+  ## This gets skipped if there are no t-final data
+  if("soilInorganicNugPerGram_tInitial" %in% colnames(cast1)){
+    combinedDF_collapse <- combinedDF_4 %>%
+      mutate(
+        soilAmmoniumNugPerGram = ifelse(nTransBoutType == "tFinal", NA, soilAmmoniumNugPerGram), # get rid of extractable N data for t-final
+        soilNitrateNitriteNugPerGram = ifelse(nTransBoutType == "tFinal", NA, soilNitrateNitriteNugPerGram),
+        soilInorganicNugPerGram = ifelse(nTransBoutType == "tFinal", NA, soilInorganicNugPerGram)
+      ) %>%
+      filter(!sampleID %in% c("", NA)) %>% # get rid of blanks
+      select(
+        incubationPairID,
+        soilAmmoniumNugPerGram,
+        soilNitrateNitriteNugPerGram,
+        soilInorganicNugPerGram,
+        netNminugPerGramPerDay,
+        netNitugPerGramPerDay
+      ) %>%
+      group_by(incubationPairID) %>%
+      summarise_all(list(~ if (is.numeric(.)) {
+        mean(., na.rm = TRUE)
+      } else {
+        first(.)
+      }))
   
-  # Make nice summary table, samples only and key variables ----
-  combinedDF_clean <- combinedDF_3 %>%
+  # Make a summary table, samples only and key variables
+  combinedDF_clean <- combinedDF_4 %>%
     filter(nTransBoutType == "tInitial") %>%
     select(sampleID, collectDate, incubationPairID) %>%
     left_join(combinedDF_collapse, by = "incubationPairID")
   
   # Final data cleaning and preparation for export list ----
-  # set NaN to NA
-  combinedDF_3[is.na(combinedDF_3)] <- NA
+  # set NaN to NA, round numeric variables to 3 digits
   combinedDF_clean[is.na(combinedDF_clean)] <- NA
-  
-  # Round all numeric variables to 3 digits
-  combinedDF_3 <- mutate_if(combinedDF_3, is.numeric, round, digits = 3)
   combinedDF_clean <- mutate_if(combinedDF_clean, is.numeric, round, digits = 3)
+  }
   
+  combinedDF_4[is.na(combinedDF_4)] <- NA
+  combinedDF_4 <- mutate_if(combinedDF_4, is.numeric, round, digits = 3)
+
+  # Creatte output list
+  if(exists("combinedDF_clean")){
   output.list <- list(
-    all_data = combinedDF_3,
+    all_data = combinedDF_4,
     data_summary = combinedDF_clean
   )
+  } else {
+    output.list <- list(
+      all_data = combinedDF_4
+    )
+  }
   
   if (exists("combinedDF_condition_dropped")) {
     output.list[['dropped_condition']] = combinedDF_condition_dropped
