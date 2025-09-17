@@ -2,6 +2,7 @@ neonNTrans
 ================
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
+
 <!-- ****** Description ****** -->
 
 This package is for calculating soil extractable inorganic nitrogen (N)
@@ -30,7 +31,7 @@ this package is:
 
 <!-- -->
 
-     library(neonUtilties)  
+     library(neonUtilities)  
      soilData <- loadByProduct(site = c("LENO", "HARV", "WREF"), dpID = "DP1.10086.001", package = "basic", check.size = F)
 
 3.  Alternatively, download files manually from the NEON data portal, or
@@ -153,6 +154,7 @@ e2022EF003224. doi.org/10.1029/2022EF003224
 ## Credits & Acknowledgements
 
 <!-- HTML tags to produce image, resize, add hyperlink. -->
+
 <!-- ONLY WORKS WITH HTML or GITHUB documents -->
 
 <a href="http://www.neonscience.org/">

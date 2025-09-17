@@ -24,7 +24,7 @@ The single function contained in this package, def.calc.ntrans, has the followin
 1. Download data for NEON.DP1.10086, Soil physical and chemical properties, periodic.
 2. _Recommended Workflow_ Use functions from the neonUtilities package (on CRAN) to download files and/or read files directly into R. See neonUtilities package documentation for more details.
 ```
- library(neonUtilties)  
+ library(neonUtilities)  
  soilData <- loadByProduct(site = c("LENO", "HARV", "WREF"), dpID = "DP1.10086.001", package = "basic", check.size = F)
 ```
 3. Alternatively, download files manually from the NEON data portal, or via some other mechanism.
